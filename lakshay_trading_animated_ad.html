@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lakshay Trading Academy – Animated Ad</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.stage {
+  width: 600px;
+  height: 600px;
+  position: relative;
+  overflow: hidden;
+  background: #05050D;
+  cursor: pointer;
+}
+
+/* ── CANVAS for chart lines ── */
+#chartCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ── GRID ── */
+.grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(196,155,60,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,155,60,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 2;
+  opacity: 0;
+  animation: fadeIn .8s .3s ease forwards;
+}
+
+/* ── RADIAL GLOW ── */
+.glow-center {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgba(196,155,60,.1) 0%, transparent 70%);
+  z-index: 2;
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0%,100% { opacity: .6; transform: translate(-50%,-50%) scale(1); }
+  50%      { opacity: 1;  transform: translate(-50%,-50%) scale(1.08); }
+}
+
+/* ── PARTICLES ── */
+#particles { position:absolute; inset:0; z-index:3; pointer-events:none; }
+
+/* ── GOLD BORDER ── */
+.border-frame {
+  position: absolute; inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.border-frame::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border: 1px solid rgba(196,155,60,0);
+  animation: borderReveal 1s 1s ease forwards;
+}
+@keyframes borderReveal {
+  to { border-color: rgba(196,155,60,.4); }
+}
+.corner-gem {
+  position: absolute;
+  width: 12px; height: 12px;
+  font-size: 10px; color: #F0D060;
+  display: flex; align-items: center; justify-content: center;
+  text-shadow: 0 0 8px rgba(240,208,96,.8);
+  opacity: 0;
+  animation: fadeIn .4s 1.8s ease forwards;
+}
+.corner-gem.tl { top: 2px; left: 2px; }
+.corner-gem.tr { top: 2px; right: 2px; }
+.corner-gem.bl { bottom: 2px; left: 2px; }
+.corner-gem.br { bottom: 2px; right: 2px; }
+
+/* ── TOP STRIPE ── */
+.top-stripe {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 58px;
+  background: linear-gradient(90deg, #0C0C18, #181000, #0C0C18);
+  border-bottom: 1px solid rgba(196,155,60,.3);
+  z-index: 15;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 22px;
+  clip-path: inset(0 100% 0 0);
+  animation: slideRight 0.7s 0.5s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes slideRight {
+  to { clip-path: inset(0 0% 0 0); }
+}
+.brand-row { display: flex; align-items: center; gap: 10px; }
+.logo-ring {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid #C49B3C;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  background: rgba(196,155,60,.1);
+  box-shadow: 0 0 14px rgba(196,155,60,.35);
+  animation: spinIn .6s .8s ease both;
+}
+@keyframes spinIn {
+  from { transform: rotate(-180deg) scale(0); opacity: 0; }
+  to   { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+.brand-text-wrap {}
+.brand-name {
+  font-family: 'Oswald'; font-size: 16px; font-weight: 700;
+  color: #F0D060; letter-spacing: 3px; text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(240,208,96,.4);
+}
+.brand-sub {
+  font-family: 'Montserrat'; font-size: 7px; font-weight: 600;
+  color: rgba(196,155,60,.55); letter-spacing: 4px; text-transform: uppercase;
+}
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(196,155,60,.1);
+  border: 1px solid rgba(196,155,60,.3);
+  border-radius: 2px; padding: 4px 10px;
+  opacity: 0;
+  animation: fadeIn .4s 1.4s ease forwards;
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #F0D060;
+  box-shadow: 0 0 6px rgba(240,208,96,.9);
+  animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink {
+  0%,100% { opacity:1; } 50% { opacity:.2; }
+}
+.live-text {
+  font-family: 'Montserrat'; font-size: 8px; font-weight: 800;
+  color: #F0D060; letter-spacing: 3px;
+}
+
+/* ── SCENE WRAPPER ── */
+.scene {
+  position: absolute; top: 58px; left: 0; right: 0; bottom: 0;
+  z-index: 10;
+}
+
+/* ── SCENE 1: INTRO ── */
+#scene1 {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 0 40px;
+  opacity: 1;
+}
+
+.s1-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(196,155,60,.1);
+  border: 1px solid rgba(196,155,60,.35);
+  border-radius: 2px; padding: 6px 16px;
+  margin-bottom: 18px;
+  opacity: 0; transform: translateY(20px);
+  animation: fadeUp .5s 1.2s ease forwards;
+}
+.s1-chip-dot { width:6px;height:6px;border-radius:50%;background:#F0D060;box-shadow:0 0 8px #F0D060;animation:blink 1.2s infinite; }
+.s1-chip-text { font-family:'Montserrat';font-size:9px;font-weight:800;color:#F0D060;letter-spacing:4px;text-transform:uppercase; }
+
+.s1-h1 {
+  font-family: 'Oswald'; font-size: 80px; font-weight: 700;
+  text-transform: uppercase; text-align: center; line-height: .88;
+  letter-spacing: 2px;
+}
+.s1-line-white { color: #fff; text-shadow: 3px 3px 0 rgba(0,0,0,.8); display:block; opacity:0; transform:translateY(30px); animation: fadeUp .6s 1.5s ease forwards; }
+.s1-line-gold  { color: #F0D060; text-shadow: 3px 3px 0 rgba(0,0,0,.8), 0 0 40px rgba(240,208,96,.25); display:block; opacity:0; transform:translateY(30px); animation: fadeUp .6s 1.7s ease forwards; }
+
+.s1-bar {
+  background: linear-gradient(90deg, #C49B3C, #F0D060, #C49B3C);
+  padding: 5px 20px; margin-top: 10px;
+  opacity:0; transform:scaleX(0); transform-origin:left;
+  animation: barReveal .5s 2s ease forwards;
+}
+@keyframes barReveal { to { opacity:1; transform:scaleX(1); } }
+.s1-bar-text {
+  font-family:'Oswald'; font-size:34px; font-weight:700;
+  color:#05050D; letter-spacing:6px; text-transform:uppercase;
+}
+
+.s1-np {
+  margin-top: 16px; text-align: center;
+  opacity:0; animation:fadeIn .6s 2.4s ease forwards;
+}
+.s1-np-main { font-family:'Montserrat';font-size:14px;font-weight:700;color:#C49B3C;letter-spacing:1px; }
+.s1-np-sub  { font-family:'Montserrat';font-size:10px;font-weight:400;color:rgba(255,255,255,.38);margin-top:4px;line-height:1.5; }
+
+/* ── SCENE 2: WHAT YOU LEARN ── */
+#scene2 {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: 24px 28px;
+  opacity: 0; pointer-events: none;
+}
+.s2-heading {
+  font-family:'Oswald'; font-size:13px; font-weight:600;
+  color:#C49B3C; letter-spacing:6px; text-transform:uppercase;
+  margin-bottom:16px; text-align:center;
+}
+.s2-grid {
+  display: grid; grid-template-columns: repeat(2,1fr);
+  gap: 10px; flex:1;
+}
+.s2-card {
+  border: 1px solid rgba(196,155,60,.2);
+  background: rgba(196,155,60,.04);
+  border-radius: 4px; padding: 12px 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+  opacity: 0; transform: translateX(-16px);
+}
+.s2-icon { font-size: 22px; flex-shrink:0; }
+.s2-title { font-family:'Oswald';font-size:13px;font-weight:700;color:#F0D060;letter-spacing:1px;text-transform:uppercase;line-height:1.2; }
+.s2-desc  { font-family:'Montserrat';font-size:8.5px;font-weight:400;color:rgba(255,255,255,.4);margin-top:3px;line-height:1.4; }
+
+/* ── SCENE 3: FREE OFFER ── */
+#scene3 {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px 36px;
+  opacity: 0; pointer-events: none;
+}
+.s3-badge-ring {
+  width: 160px; height: 160px; border-radius: 50%;
+  border: 3px solid #C49B3C;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(196,155,60,.08);
+  box-shadow: 0 0 60px rgba(196,155,60,.3), inset 0 0 40px rgba(196,155,60,.06);
+  margin-bottom: 24px;
+  transform: scale(0); opacity: 0;
+}
+.s3-pct  { font-family:'Oswald';font-size:50px;font-weight:700;color:#F0D060;line-height:1;text-shadow:0 0 30px rgba(240,208,96,.5); }
+.s3-free { font-family:'Oswald';font-size:28px;font-weight:700;color:#fff;letter-spacing:4px; }
+.s3-sub  { font-family:'Montserrat';font-size:8px;font-weight:700;color:rgba(196,155,60,.7);letter-spacing:3px;text-transform:uppercase;margin-top:2px; }
+
+.s3-features { display:flex; gap:16px; margin-bottom:24px; opacity:0; }
+.s3-feat { display:flex;flex-direction:column;align-items:center;gap:6px; }
+.s3-feat-icon { font-size:22px; }
+.s3-feat-text { font-family:'Montserrat';font-size:8px;font-weight:700;color:rgba(196,155,60,.7);letter-spacing:2px;text-transform:uppercase;text-align:center; }
+
+.s3-nofee { font-family:'Montserrat';font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:3px;text-transform:uppercase;opacity:0; }
+
+/* ── SCENE 4: CTA ── */
+#scene4 {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px;
+  opacity: 0; pointer-events: none;
+}
+.s4-tagline {
+  font-family:'Montserrat'; font-size:13px; font-weight:700;
+  color:rgba(255,255,255,.5); letter-spacing:3px; text-transform:uppercase;
+  text-align:center; opacity:0;
+}
+.s4-main {
+  font-family:'Oswald'; font-size:64px; font-weight:700;
+  color:#F0D060; letter-spacing:2px; text-align:center; line-height:.9;
+  text-shadow:0 0 40px rgba(240,208,96,.4);
+  opacity:0;
+}
+.s4-sub {
+  font-family:'Oswald'; font-size:24px; font-weight:500;
+  color:rgba(255,255,255,.7); letter-spacing:6px; text-transform:uppercase;
+  text-align:center; opacity:0;
+}
+.s4-btn {
+  background: linear-gradient(135deg, #C49B3C, #F0D060, #C49B3C);
+  border: none; border-radius: 3px;
+  padding: 16px 48px;
+  font-family:'Oswald'; font-size:22px; font-weight:700;
+  color:#05050D; letter-spacing:4px; text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 4px 40px rgba(196,155,60,.6);
+  opacity:0; transform:scale(.9);
+  position:relative; overflow:hidden;
+}
+.s4-btn::after {
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+  animation:shimmer 2s ease-in-out infinite;
+}
+@keyframes shimmer { 0%{left:-100%} 60%,100%{left:100%} }
+.s4-handle {
+  font-family:'Montserrat'; font-size:10px; font-weight:600;
+  color:rgba(196,155,60,.55); letter-spacing:4px; text-transform:uppercase;
+  opacity:0;
+}
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+  position:absolute; bottom:0; left:0; right:0; height:52px;
+  background:linear-gradient(90deg,#0C0C18,#140D00,#0C0C18);
+  border-top:1px solid rgba(196,155,60,.25);
+  z-index:15;
+  display:flex; align-items:center; justify-content:center; gap:0;
+  clip-path: inset(100% 0 0 0);
+  animation: slideUp .6s .7s ease forwards;
+}
+@keyframes slideUp { to { clip-path:inset(0 0 0 0); } }
+.bb-item {
+  display:flex; align-items:center; gap:7px;
+  padding:0 18px;
+  border-right:1px solid rgba(196,155,60,.2);
+}
+.bb-item:last-child { border-right:none; }
+.bb-icon { font-size:13px; }
+.bb-text { font-family:'Montserrat';font-size:8px;font-weight:700;color:rgba(196,155,60,.7);letter-spacing:2px;text-transform:uppercase; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap {
+  position:absolute; bottom:52px; left:0; right:0; height:3px;
+  background:rgba(196,155,60,.1); z-index:16;
+}
+.progress-bar {
+  height:100%;
+  background:linear-gradient(90deg,#C49B3C,#F0D060);
+  width:0%; transition:width .1s linear;
+  box-shadow:0 0 8px rgba(240,208,96,.6);
+}
+
+/* ── REPLAY ── */
+.replay-btn {
+  position:absolute; bottom:60px; right:16px;
+  z-index:25; background:rgba(196,155,60,.15);
+  border:1px solid rgba(196,155,60,.4);
+  border-radius:2px; padding:5px 12px;
+  font-family:'Montserrat'; font-size:8px; font-weight:700;
+  color:#F0D060; letter-spacing:2px; cursor:pointer;
+  display:none;
+}
+
+/* SHARED UTILS */
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <canvas id="chartCanvas" width="600" height="600"></canvas>
+  <div class="grid"></div>
+  <div class="glow-center"></div>
+  <canvas id="particles" width="600" height="600"></canvas>
+
+  <!-- Border -->
+  <div class="border-frame">
+    <div class="corner-gem tl">◆</div>
+    <div class="corner-gem tr">◆</div>
+    <div class="corner-gem bl">◆</div>
+    <div class="corner-gem br">◆</div>
+  </div>
+
+  <!-- Top -->
+  <div class="top-stripe">
+    <div class="brand-row">
+      <div class="logo-ring">📈</div>
+      <div class="brand-text-wrap">
+        <div class="brand-name">Lakshay Trading Academy</div>
+        <div class="brand-sub">Learn · Analyze · Trade · Achieve</div>
+      </div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <div class="live-text">LIVE FREE CLASS</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+  <!-- Scenes -->
+  <div class="scene">
+
+    <!-- SCENE 1 -->
+    <div id="scene1">
+      <div class="s1-chip">
+        <div class="s1-chip-dot"></div>
+        <div class="s1-chip-text">Free Online Class — Registrations Open</div>
+      </div>
+      <div class="s1-h1">
+        <span class="s1-line-white">Trading</span>
+        <span class="s1-line-gold">Masterclass</span>
+      </div>
+      <div class="s1-bar"><span class="s1-bar-text">Online · Free</span></div>
+      <div class="s1-np">
+        <div class="s1-np-main">अब सिक्ने मौका सबैको लागि!</div>
+        <div class="s1-np-sub">Technical Analysis देखि Advanced Smart Money<br>Concepts सम्म — एकदमै सजिलो तरिकामा।</div>
+      </div>
+    </div>
+
+    <!-- SCENE 2 -->
+    <div id="scene2">
+      <div class="s2-heading">What You Will Learn</div>
+      <div class="s2-grid">
+        <div class="s2-card" id="c0"><div class="s2-icon">📊</div><div><div class="s2-title">Technical Analysis</div><div class="s2-desc">Charts, Patterns, Support & Resistance, Trend Analysis</div></div></div>
+        <div class="s2-card" id="c1"><div class="s2-icon">🌊</div><div><div class="s2-title">Orderflow Trading</div><div class="s2-desc">Market Depth, Liquidity & Real-Time Flow</div></div></div>
+        <div class="s2-card" id="c2"><div class="s2-icon">🏦</div><div><div class="s2-title">Institutional Level</div><div class="s2-desc">Trade Like Banks & Smart Money Institutions</div></div></div>
+        <div class="s2-card" id="c3"><div class="s2-icon">🧠</div><div><div class="s2-title">Smart Money SMC</div><div class="s2-desc">FVG, Order Blocks, BOS, Imbalances</div></div></div>
+        <div class="s2-card" id="c4"><div class="s2-icon">🛡️</div><div><div class="s2-title">Risk Management</div><div class="s2-desc">Protect Capital · Position Sizing · Trade Like Pro</div></div></div>
+        <div class="s2-card" id="c5"><div class="s2-icon">🌐</div><div><div class="s2-title">NEPSE · Forex · Futures</div><div class="s2-desc">All Global Markets Covered</div></div></div>
+      </div>
+    </div>
+
+    <!-- SCENE 3 -->
+    <div id="scene3">
+      <div class="s3-badge-ring" id="s3ring">
+        <div class="s3-pct">100%</div>
+        <div class="s3-free">FREE</div>
+        <div class="s3-sub">For Everyone</div>
+      </div>
+      <div class="s3-features" id="s3feats">
+        <div class="s3-feat"><div class="s3-feat-icon">🔴</div><div class="s3-feat-text">Live<br>Session</div></div>
+        <div class="s3-feat"><div class="s3-feat-icon">🎓</div><div class="s3-feat-text">Beginner<br>→ Pro</div></div>
+        <div class="s3-feat"><div class="s3-feat-icon">♾️</div><div class="s3-feat-text">Lifetime<br>Support</div></div>
+        <div class="s3-feat"><div class="s3-feat-icon">🏆</div><div class="s3-feat-text">Practical<br>Learning</div></div>
+      </div>
+      <div class="s3-nofee" id="s3nofee">✦ No Fees · No Hidden Charges ✦</div>
+    </div>
+
+    <!-- SCENE 4 -->
+    <div id="scene4">
+      <div class="s4-tagline" id="s4tag">Stop Gambling. Start Trading.</div>
+      <div class="s4-main" id="s4main">JOIN<br>NOW</div>
+      <div class="s4-sub" id="s4sub">Limited Seats Available</div>
+      <button class="s4-btn" id="s4btn">DM Us To Enroll →</button>
+      <div class="s4-handle" id="s4hand">@lakshaytrading · Free · Online</div>
+    </div>
+
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom-bar">
+    <div class="bb-item"><span class="bb-icon">📈</span><span class="bb-text">NEPSE</span></div>
+    <div class="bb-item"><span class="bb-icon">💱</span><span class="bb-text">Forex</span></div>
+    <div class="bb-item"><span class="bb-icon">📉</span><span class="bb-text">Futures</span></div>
+    <div class="bb-item"><span class="bb-icon">⚡</span><span class="bb-text">Options</span></div>
+    <div class="bb-item"><span class="bb-icon">🔥</span><span class="bb-text">Smart Money</span></div>
+  </div>
+
+  <button class="replay-btn" id="replayBtn" onclick="startAnimation()">↺ REPLAY</button>
+</div>
+
+<script>
+// ─── CHART BACKGROUND ───────────────────────────────────
+const chartCanvas = document.getElementById('chartCanvas');
+const ctx = chartCanvas.getContext('2d');
+let chartProgress = 0;
+const chartPoints = [];
+
+function generateChart() {
+  let y = 320, x = 0;
+  while (x < 700) {
+    x += Math.random() * 20 + 8;
+    y += (Math.random() - 0.44) * 28;
+    y = Math.max(180, Math.min(500, y));
+    chartPoints.push({ x, y });
+  }
+}
+
+function drawChart(progress) {
+  ctx.clearRect(0, 0, 600, 600);
+  if (chartPoints.length < 2) return;
+
+  const end = Math.floor(chartPoints.length * progress);
+  if (end < 2) return;
+
+  // Area fill
+  ctx.beginPath();
+  ctx.moveTo(chartPoints[0].x, chartPoints[0].y);
+  for (let i = 1; i < end; i++) ctx.lineTo(chartPoints[i].x, chartPoints[i].y);
+  ctx.lineTo(chartPoints[end-1].x, 600);
+  ctx.lineTo(chartPoints[0].x, 600);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 200, 0, 600);
+  grad.addColorStop(0, 'rgba(196,155,60,.12)');
+  grad.addColorStop(1, 'rgba(196,155,60,.01)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(chartPoints[0].x, chartPoints[0].y);
+  for (let i = 1; i < end; i++) ctx.lineTo(chartPoints[i].x, chartPoints[i].y);
+  ctx.strokeStyle = 'rgba(196,155,60,.25)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Candlesticks
+  for (let i = 1; i < end - 1; i += 3) {
+    const x = chartPoints[i].x;
+    const open  = chartPoints[i-1].y;
+    const close = chartPoints[i].y;
+    const high  = Math.min(open, close) - Math.random() * 10;
+    const low   = Math.max(open, close) + Math.random() * 10;
+    const bull  = close < open;
+    ctx.strokeStyle = bull ? 'rgba(196,155,60,.5)' : 'rgba(180,60,60,.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, high); ctx.lineTo(x, low);
+    ctx.stroke();
+    ctx.fillStyle = bull ? 'rgba(196,155,60,.45)' : 'rgba(180,60,60,.35)';
+    ctx.fillRect(x - 4, Math.min(open, close), 8, Math.abs(open - close) || 2);
+  }
+}
+
+// ─── PARTICLES ──────────────────────────────────────────
+const pCanvas = document.getElementById('particles');
+const pCtx = pCanvas.getContext('2d');
+const pList = [];
+
+function spawnParticle() {
+  pList.push({
+    x: Math.random() * 600,
+    y: 600,
+    vx: (Math.random() - .5) * .8,
+    vy: -(Math.random() * 1.2 + .4),
+    size: Math.random() * 2.5 + .5,
+    alpha: Math.random() * .5 + .2,
+    life: 1
+  });
+}
+
+function updateParticles() {
+  pCtx.clearRect(0, 0, 600, 600);
+  if (Math.random() < .3) spawnParticle();
+  for (let i = pList.length - 1; i >= 0; i--) {
+    const p = pList[i];
+    p.x += p.vx; p.y += p.vy; p.life -= .005;
+    if (p.life <= 0 || p.y < 58) { pList.splice(i, 1); continue; }
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    pCtx.fillStyle = `rgba(196,155,60,${p.alpha * p.life})`;
+    pCtx.fill();
+  }
+}
+
+// ─── TIMELINE ───────────────────────────────────────────
+const TOTAL_MS = 14000; // 14 seconds total
+const scenes = [
+  { id: 'scene1', start: 0,    end: 3500  },
+  { id: 'scene2', start: 3500, end: 7500  },
+  { id: 'scene3', start: 7500, end: 11000 },
+  { id: 'scene4', start: 11000, end: 14000 }
+];
+
+let startTime = null;
+let animFrame = null;
+let scene2Animated = false;
+let scene3Animated = false;
+let scene4Animated = false;
+
+function ease(t) { return t < .5 ? 2*t*t : -1+(4-2*t)*t; }
+
+function animateIn(el, delay, props = {}) {
+  setTimeout(() => {
+    Object.assign(el.style, {
+      transition: 'opacity .5s ease, transform .5s ease',
+      opacity: '1',
+      transform: 'translateX(0) translateY(0) scale(1)',
+      ...props
+    });
+  }, delay);
+}
+
+function showScene(id) {
+  scenes.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (s.id === id) {
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'auto';
+    } else {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    }
+  });
+}
+
+function triggerScene2() {
+  if (scene2Animated) return;
+  scene2Animated = true;
+  document.getElementById('scene2').style.opacity = '1';
+  const heading = document.querySelector('.s2-heading');
+  heading.style.opacity = '0';
+  setTimeout(() => {
+    heading.style.transition = 'opacity .4s, transform .4s';
+    heading.style.opacity = '1';
+  }, 100);
+  for (let i = 0; i < 6; i++) {
+    const card = document.getElementById('c' + i);
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(-20px)';
+    setTimeout(() => {
+      card.style.transition = 'opacity .45s ease, transform .45s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateX(0)';
+    }, 200 + i * 160);
+  }
+}
+
+function triggerScene3() {
+  if (scene3Animated) return;
+  scene3Animated = true;
+  const ring = document.getElementById('s3ring');
+  ring.style.transition = 'opacity .6s ease, transform .6s cubic-bezier(.34,1.56,.64,1)';
+  ring.style.opacity = '1';
+  ring.style.transform = 'scale(1)';
+  const feats = document.getElementById('s3feats');
+  setTimeout(() => {
+    feats.style.transition = 'opacity .5s ease';
+    feats.style.opacity = '1';
+  }, 600);
+  const nofee = document.getElementById('s3nofee');
+  setTimeout(() => {
+    nofee.style.transition = 'opacity .5s ease';
+    nofee.style.opacity = '1';
+  }, 1000);
+}
+
+function triggerScene4() {
+  if (scene4Animated) return;
+  scene4Animated = true;
+  const items = [
+    { id:'s4tag',  delay:100, from:'translateY(20px)' },
+    { id:'s4main', delay:350, from:'translateY(30px)' },
+    { id:'s4sub',  delay:600, from:'translateY(20px)' },
+    { id:'s4btn',  delay:850, from:'scale(.85)' },
+    { id:'s4hand', delay:1100, from:'translateY(10px)' }
+  ];
+  items.forEach(({ id, delay, from }) => {
+    const el = document.getElementById(id);
+    el.style.transform = from;
+    setTimeout(() => {
+      el.style.transition = 'opacity .5s ease, transform .5s ease';
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0) scale(1)';
+    }, delay);
+  });
+}
+
+function tick(ts) {
+  if (!startTime) startTime = ts;
+  const elapsed = ts - startTime;
+  const progress = Math.min(elapsed / TOTAL_MS, 1);
+
+  // Progress bar
+  document.getElementById('progressBar').style.width = (progress * 100) + '%';
+
+  // Chart draw
+  drawChart(Math.min(elapsed / 5000, 1));
+
+  // Particles
+  updateParticles();
+
+  // Scene transitions
+  if (elapsed < 3500) {
+    showScene('scene1');
+  } else if (elapsed < 7500) {
+    showScene('scene2');
+    triggerScene2();
+  } else if (elapsed < 11000) {
+    showScene('scene3');
+    triggerScene3();
+  } else {
+    showScene('scene4');
+    triggerScene4();
+  }
+
+  if (progress < 1) {
+    animFrame = requestAnimationFrame(tick);
+  } else {
+    document.getElementById('replayBtn').style.display = 'block';
+  }
+}
+
+function startAnimation() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  startTime = null;
+  scene2Animated = false;
+  scene3Animated = false;
+  scene4Animated = false;
+  document.getElementById('replayBtn').style.display = 'none';
+  document.getElementById('progressBar').style.width = '0%';
+
+  // reset scenes
+  ['scene1','scene2','scene3','scene4'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.style.opacity = i === 0 ? '1' : '0';
+    el.style.pointerEvents = i === 0 ? 'auto' : 'none';
+  });
+
+  // reset scene2 cards
+  for (let i = 0; i < 6; i++) {
+    const c = document.getElementById('c' + i);
+    if (c) { c.style.opacity='0'; c.style.transform='translateX(-20px)'; c.style.transition='none'; }
+  }
+  document.querySelector('.s2-heading').style.opacity = '0';
+
+  // reset scene3
+  const ring = document.getElementById('s3ring');
+  ring.style.opacity='0'; ring.style.transform='scale(0)'; ring.style.transition='none';
+  document.getElementById('s3feats').style.opacity='0';
+  document.getElementById('s3nofee').style.opacity='0';
+
+  // reset scene4
+  ['s4tag','s4main','s4sub','s4btn','s4hand'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.opacity='0'; el.style.transition='none'; }
+  });
+
+  animFrame = requestAnimationFrame(tick);
+}
+
+// Boot
+generateChart();
+window.addEventListener('load', () => {
+  setTimeout(startAnimation, 800);
+});
+</script>
+</body>
+</html>
